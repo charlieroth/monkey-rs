@@ -20,6 +20,11 @@ pub enum Token {
     Rbrace,
     Func,
     Let,
+    If,
+    Else,
+    True,
+    False,
+    Return,
 }
 
 pub struct Lexer {
@@ -136,6 +141,11 @@ impl Lexer {
         match literal {
             "fn" => Token::Func,
             "let" => Token::Let,
+            "if" => Token::If,
+            "else" => Token::Else,
+            "true" => Token::True,
+            "false" => Token::False,
+            "return" => Token::Return,
             _ => Token::Ident(String::from(literal)),
         }
     }
@@ -313,6 +323,43 @@ mod tests {
             Token::Gt,
             Token::Int("5".to_string()),
             Token::Semicolon,
+            Token::Eof,
+        ];
+
+        for expected in expected_tokens {
+            let actual = lexer.next();
+            assert_eq!(expected, actual);
+        }
+    }
+
+    #[test]
+    fn if_else_statements() {
+        let input = "
+        if (5 < 10) {
+            return true;
+        } else {
+            return false;
+        }
+        ";
+        let mut lexer = Lexer::new(input.to_string());
+        let expected_tokens = vec![
+            Token::If,
+            Token::Lparen,
+            Token::Int("5".to_string()),
+            Token::Lt,
+            Token::Int("10".to_string()),
+            Token::Rparen,
+            Token::Lbrace,
+            Token::Return,
+            Token::True,
+            Token::Semicolon,
+            Token::Rbrace,
+            Token::Else,
+            Token::Lbrace,
+            Token::Return,
+            Token::False,
+            Token::Semicolon,
+            Token::Rbrace,
             Token::Eof,
         ];
 
