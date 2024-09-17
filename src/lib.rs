@@ -5,6 +5,8 @@ pub enum Token {
     Ident(String),
     Int(String),
     Assign,
+    Eq,
+    NotEq,
     Plus,
     Minus,
     Asterisk,
@@ -52,8 +54,14 @@ impl Lexer {
 
         match self.ch {
             b'=' => {
-                self.read_char();
-                return Token::Assign;
+                if self.peek_char() == b'=' {
+                    self.read_char();
+                    self.read_char();
+                    return Token::Eq;
+                } else {
+                    self.read_char();
+                    return Token::Assign;
+                }
             }
             b';' => {
                 self.read_char();
@@ -96,8 +104,14 @@ impl Lexer {
                 return Token::Gt;
             }
             b'!' => {
-                self.read_char();
-                return Token::Bang;
+                if self.peek_char() == b'=' {
+                    self.read_char();
+                    self.read_char();
+                    return Token::NotEq;
+                } else {
+                    self.read_char();
+                    return Token::Bang;
+                }
             }
             b'{' => {
                 self.read_char();
@@ -121,6 +135,14 @@ impl Lexer {
                 self.read_char();
                 return Token::Illegal;
             }
+        }
+    }
+
+    fn peek_char(&self) -> u8 {
+        if self.read_position >= self.input.len() {
+            return 0;
+        } else {
+            return self.input.as_bytes()[self.read_position];
         }
     }
 
@@ -360,6 +382,31 @@ mod tests {
             Token::False,
             Token::Semicolon,
             Token::Rbrace,
+            Token::Eof,
+        ];
+
+        for expected in expected_tokens {
+            let actual = lexer.next();
+            assert_eq!(expected, actual);
+        }
+    }
+
+    #[test]
+    fn equal_not_equal() {
+        let input = "
+        10 == 10;
+        10 != 9;
+        ";
+        let mut lexer = Lexer::new(input.to_string());
+        let expected_tokens = vec![
+            Token::Int("10".to_string()),
+            Token::Eq,
+            Token::Int("10".to_string()),
+            Token::Semicolon,
+            Token::Int("10".to_string()),
+            Token::NotEq,
+            Token::Int("9".to_string()),
+            Token::Semicolon,
             Token::Eof,
         ];
 
