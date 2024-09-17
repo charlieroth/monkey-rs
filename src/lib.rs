@@ -6,8 +6,14 @@ pub enum Token {
     Int(String),
     Assign,
     Plus,
+    Minus,
+    Asterisk,
+    Slash,
     Comma,
     Semicolon,
+    Bang,
+    Lt,
+    Gt,
     Lparen,
     Rparen,
     Lbrace,
@@ -64,6 +70,30 @@ impl Lexer {
                 self.read_char();
                 return Token::Plus;
             }
+            b'-' => {
+                self.read_char();
+                return Token::Minus;
+            }
+            b'/' => {
+                self.read_char();
+                return Token::Slash;
+            }
+            b'*' => {
+                self.read_char();
+                return Token::Asterisk;
+            }
+            b'<' => {
+                self.read_char();
+                return Token::Lt;
+            }
+            b'>' => {
+                self.read_char();
+                return Token::Gt;
+            }
+            b'!' => {
+                self.read_char();
+                return Token::Bang;
+            }
             b'{' => {
                 self.read_char();
                 return Token::Lbrace;
@@ -106,7 +136,7 @@ impl Lexer {
         match literal {
             "fn" => Token::Func,
             "let" => Token::Let,
-            _ => Token::Ident(String::from(literal))
+            _ => Token::Ident(String::from(literal)),
         }
     }
 
@@ -157,7 +187,9 @@ mod tests {
 
     #[test]
     fn basic_symbols() {
-        let input = "=+(){},;";
+        let input = "
+        =+(){},;
+        ";
         let mut lexer = Lexer::new(input.to_string());
         let expected_tokens = vec![
             Token::Assign,
@@ -251,6 +283,35 @@ mod tests {
             Token::Comma,
             Token::Ident("ten".to_string()),
             Token::Rparen,
+            Token::Semicolon,
+            Token::Eof,
+        ];
+
+        for expected in expected_tokens {
+            let actual = lexer.next();
+            assert_eq!(expected, actual);
+        }
+    }
+
+    #[test]
+    fn more_symbols() {
+        let input = "
+        !-/*5;
+        5 < 10 > 5;
+        ";
+        let mut lexer = Lexer::new(input.to_string());
+        let expected_tokens = vec![
+            Token::Bang,
+            Token::Minus,
+            Token::Slash,
+            Token::Asterisk,
+            Token::Int("5".to_string()),
+            Token::Semicolon,
+            Token::Int("5".to_string()),
+            Token::Lt,
+            Token::Int("10".to_string()),
+            Token::Gt,
+            Token::Int("5".to_string()),
             Token::Semicolon,
             Token::Eof,
         ];
