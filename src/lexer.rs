@@ -1,14 +1,14 @@
 use crate::token::Token;
 
-pub struct Lexer {
-    input: String,
+pub struct Lexer<'a> {
+    input: &'a str,
     position: usize,
     read_position: usize,
     ch: u8,
 }
 
-impl Lexer {
-    pub fn new(input: String) -> Lexer {
+impl<'a> Lexer<'a> {
+    pub fn new(input: &'a str) -> Self {
         let mut lexer = Lexer {
             input,
             position: 0,
@@ -157,7 +157,7 @@ impl Lexer {
         }
 
         let literal = &self.input[start..self.position];
-        return Token::Int(String::from(literal));
+        return Token::Int(literal.parse().unwrap());
     }
 
     fn read_char(&mut self) {
@@ -193,7 +193,7 @@ mod tests {
         let input = "
         =+(){},;
         ";
-        let mut lexer = Lexer::new(input.to_string());
+        let mut lexer = Lexer::new(input);
         let expected_tokens = vec![
             Token::Assign,
             Token::Plus,
@@ -218,17 +218,17 @@ mod tests {
         let five = 5;
         let ten = 10;
         ";
-        let mut lexer = Lexer::new(input.to_string());
+        let mut lexer = Lexer::new(input);
         let expected_tokens = vec![
             Token::Let,
             Token::Ident("five".to_string()),
             Token::Assign,
-            Token::Int("5".to_string()),
+            Token::Int(5),
             Token::Semicolon,
             Token::Let,
             Token::Ident("ten".to_string()),
             Token::Assign,
-            Token::Int("10".to_string()),
+            Token::Int(10),
             Token::Semicolon,
             Token::Eof,
         ];
@@ -249,17 +249,17 @@ mod tests {
         };
         let result = add(five, ten);
         ";
-        let mut lexer = Lexer::new(input.to_string());
+        let mut lexer = Lexer::new(input);
         let expected_tokens = vec![
             Token::Let,
             Token::Ident("five".to_string()),
             Token::Assign,
-            Token::Int("5".to_string()),
+            Token::Int(5),
             Token::Semicolon,
             Token::Let,
             Token::Ident("ten".to_string()),
             Token::Assign,
-            Token::Int("10".to_string()),
+            Token::Int(10),
             Token::Semicolon,
             Token::Let,
             Token::Ident("add".to_string()),
@@ -302,19 +302,19 @@ mod tests {
         !-/*5;
         5 < 10 > 5;
         ";
-        let mut lexer = Lexer::new(input.to_string());
+        let mut lexer = Lexer::new(input);
         let expected_tokens = vec![
             Token::Bang,
             Token::Minus,
             Token::Slash,
             Token::Asterisk,
-            Token::Int("5".to_string()),
+            Token::Int(5),
             Token::Semicolon,
-            Token::Int("5".to_string()),
+            Token::Int(5),
             Token::Lt,
-            Token::Int("10".to_string()),
+            Token::Int(10),
             Token::Gt,
-            Token::Int("5".to_string()),
+            Token::Int(5),
             Token::Semicolon,
             Token::Eof,
         ];
@@ -334,13 +334,13 @@ mod tests {
             return false;
         }
         ";
-        let mut lexer = Lexer::new(input.to_string());
+        let mut lexer = Lexer::new(input);
         let expected_tokens = vec![
             Token::If,
             Token::Lparen,
-            Token::Int("5".to_string()),
+            Token::Int(5),
             Token::Lt,
-            Token::Int("10".to_string()),
+            Token::Int(10),
             Token::Rparen,
             Token::Lbrace,
             Token::Return,
@@ -368,15 +368,15 @@ mod tests {
         10 == 10;
         10 != 9;
         ";
-        let mut lexer = Lexer::new(input.to_string());
+        let mut lexer = Lexer::new(input);
         let expected_tokens = vec![
-            Token::Int("10".to_string()),
+            Token::Int(10),
             Token::Eq,
-            Token::Int("10".to_string()),
+            Token::Int(10),
             Token::Semicolon,
-            Token::Int("10".to_string()),
+            Token::Int(10),
             Token::NotEq,
-            Token::Int("9".to_string()),
+            Token::Int(9),
             Token::Semicolon,
             Token::Eof,
         ];
