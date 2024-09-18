@@ -4,10 +4,14 @@ use crate::{
     token::Token,
 };
 
+type ParseError = String;
+type ParseErrors = Vec<ParseError>;
+
 pub struct Parser<'a> {
     pub lexer: Lexer<'a>,
     pub curr_token: Token,
     pub peek_token: Token,
+    pub errors: ParseErrors,
 }
 
 impl<'a> Parser<'a> {
@@ -16,6 +20,7 @@ impl<'a> Parser<'a> {
             lexer,
             curr_token: Token::Eof,
             peek_token: Token::Eof,
+            errors: vec![],
         };
 
         parser.next_token();
@@ -24,11 +29,16 @@ impl<'a> Parser<'a> {
         parser
     }
 
+    pub fn get_errors(&mut self) -> ParseErrors {
+        self.errors.clone()
+    }
+
     pub fn parse_program(&mut self) -> ast::Program {
         let mut program: ast::Program = vec![];
         while self.curr_token != Token::Eof {
-            if let Some(statement) = self.parse_statement() {
-                program.push(statement)
+            match self.parse_statement() {
+                Ok(statement) => program.push(statement),
+                Err(e) => self.errors.push(e),
             }
             self.next_token();
         }
@@ -36,77 +46,74 @@ impl<'a> Parser<'a> {
         program
     }
 
-    pub fn parse_statement(&mut self) -> Option<ast::Statement> {
+    pub fn parse_statement(&mut self) -> Result<ast::Statement, ParseError> {
         match self.curr_token {
             Token::Let => self.parse_let_statement(),
-            _ => None,
+            _ => Err(format!(
+                "Unsupported statement token: {:?}",
+                self.curr_token
+            )),
         }
     }
 
-    pub fn parse_let_statement(&mut self) -> Option<ast::Statement> {
-        // next token should be Token::Ident
-        match &self.peek_token {
-            Token::Ident(_) => self.next_token(),
-            _ => return None,
-        };
-
-        // parse ast::Expr::Ident
-        let ident = match self.parse_ident() {
-            Some(ident) => ident,
-            None => return None,
-        };
-
-        // next token should be Token::Assign, no need to parse anything
-        if !self.expect_peek_token(Token::Assign) {
-            return None;
-        }
-
-        // skip Token::Assign
+    pub fn parse_let_statement(&mut self) -> Result<ast::Statement, ParseError> {
         self.next_token();
 
-        // parse ast::Expr within ast::Statement::Let
-        let expression = match self.parse_expression() {
-            Some(expr) => expr,
-            None => return None,
+        let mut identifier_name = "".to_string();
+        match &self.curr_token {
+            Token::Ident(name) => {
+                identifier_name = name.to_string();
+            }
+            _ => return Err(format!("Expected identifier, got: {:?}", self.curr_token)),
         };
 
-        // next token should be Token::Semicolon
-        if self.peek_token_is(&Token::Semicolon) {
-            self.next_token();
-        }
+        self.expect_peek_token(&Token::Assign)?;
+        self.next_token();
 
-        // all conditions for a ast::Statement::Let are met
-        // return parsed ast::Statement::Let
-        Some(ast::Statement::Let(ident, expression))
+        let expression = match self.parse_expression() {
+            Ok(expression) => expression,
+            Err(e) => return Err(e),
+        };
+
+        self.expect_peek_token(&Token::Semicolon)?;
+        self.next_token();
+
+        Ok(ast::Statement::Let(ast::Ident(identifier_name), expression))
     }
 
-    pub fn parse_expression(&mut self) -> Option<ast::Expr> {
+    pub fn parse_expression(&mut self) -> Result<ast::Expr, ParseError> {
         match self.curr_token {
             Token::Ident(_) => self.parse_ident_expression(),
             Token::Int(_) => self.parse_int_expression(),
-            _ => None,
+            _ => Err(format!(
+                "Unsupported token for expression parsing {:?}",
+                self.curr_token
+            )),
         }
     }
 
-    fn parse_ident_expression(&mut self) -> Option<ast::Expr> {
-        self.parse_ident().map(ast::Expr::Ident)
+    fn parse_ident_expression(&mut self) -> Result<ast::Expr, ParseError> {
+        self.parse_ident()
     }
 
-    pub fn parse_ident(&mut self) -> Option<ast::Ident> {
+    pub fn parse_ident(&mut self) -> Result<ast::Expr, ParseError> {
         match self.curr_token {
-            Token::Ident(ref mut ident) => Some(ast::Ident(ident.clone())),
-            _ => None,
+            Token::Ident(ref mut ident) => Ok(ast::Expr::Ident(ast::Ident(ident.clone()))),
+            _ => Err(format!(
+                "Expected identifier token, got: {:?}",
+                self.curr_token
+            )),
         }
     }
 
-    fn parse_int_expression(&mut self) -> Option<ast::Expr> {
-        self.parse_int().map(ast::Expr::Literal)
+    fn parse_int_expression(&mut self) -> Result<ast::Expr, ParseError> {
+        self.parse_int()
     }
 
-    fn parse_int(&mut self) -> Option<ast::Literal> {
+    fn parse_int(&mut self) -> Result<ast::Expr, ParseError> {
         match self.curr_token {
-            Token::Int(int) => Some(ast::Literal::Int(int)),
-            _ => None,
+            Token::Int(int) => Ok(ast::Expr::Literal(ast::Literal::Int(int))),
+            _ => Err(format!("Expected int tokne, got: {:?}", self.curr_token)),
         }
     }
 
@@ -119,12 +126,15 @@ impl<'a> Parser<'a> {
         self.peek_token == *tok
     }
 
-    pub fn expect_peek_token(&mut self, tok: Token) -> bool {
-        if self.peek_token_is(&tok) {
-            self.next_token();
-            true
+    pub fn expect_peek_token(&mut self, tok: &Token) -> Result<(), ParseError> {
+        self.next_token();
+        if self.curr_token == *tok {
+            Ok(())
         } else {
-            false
+            Err(format!(
+                "Expected token: {:?}, got {:?}",
+                tok, self.curr_token
+            ))
         }
     }
 }
@@ -140,7 +150,9 @@ mod tests {
         let input = "
         let x = 5;
         ";
+
         let parser = Parser::new(Lexer::new(input));
+
         assert_eq!(parser.curr_token, Token::Let);
         assert_eq!(parser.peek_token, Token::Ident(String::from("x")));
     }
@@ -150,8 +162,11 @@ mod tests {
         let input = "
         let x = 5;
         ";
+
         let mut parser = Parser::new(Lexer::new(input));
         let statement = parser.parse_let_statement();
+
+        assert_eq!(0, parser.get_errors().len());
         assert_eq!(
             statement,
             Some(ast::Statement::Let(
@@ -172,6 +187,7 @@ mod tests {
         let mut parser = Parser::new(Lexer::new(input));
         let program = parser.parse_program();
 
+        assert_eq!(0, parser.get_errors().len());
         assert_eq!(
             vec![
                 ast::Statement::Let(
@@ -189,5 +205,19 @@ mod tests {
             ],
             program
         );
+    }
+
+    #[test]
+    fn let_statement_with_error() {
+        let input = "
+        let = 10;
+        ";
+
+        let mut parser = Parser::new(Lexer::new(input));
+        let program = parser.parse_program();
+        // println!("{:?}", program);
+        // println!("{:?}", parser.get_errors());
+        // assert_eq!(true, true);
+        assert_eq!(2, parser.get_errors().len());
     }
 }
