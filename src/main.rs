@@ -18,7 +18,7 @@ fn main() -> Result<()> {
         let readline = rl.readline(">> ");
         match readline {
             Ok(line) => {
-                let mut lexer = Lexer::new(line);
+                let mut lexer = Lexer::new(&line);
                 loop {
                     let next = lexer.next();
                     if next == Token::Eof {

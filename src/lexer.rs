@@ -17,7 +17,7 @@ impl<'a> Lexer<'a> {
         };
 
         lexer.read_char();
-        return lexer;
+        lexer
     }
 
     pub fn next(&mut self) -> Token {
@@ -28,106 +28,95 @@ impl<'a> Lexer<'a> {
                 if self.peek_char() == b'=' {
                     self.read_char();
                     self.read_char();
-                    return Token::Eq;
+                    Token::Eq
                 } else {
                     self.read_char();
-                    return Token::Assign;
+                    Token::Assign
                 }
             }
             b';' => {
                 self.read_char();
-                return Token::Semicolon;
+                Token::Semicolon
             }
             b'(' => {
                 self.read_char();
-                return Token::Lparen;
+                Token::Lparen
             }
             b')' => {
                 self.read_char();
-                return Token::Rparen;
+                Token::Rparen
             }
             b',' => {
                 self.read_char();
-                return Token::Comma;
+                Token::Comma
             }
             b'+' => {
                 self.read_char();
-                return Token::Plus;
+                Token::Plus
             }
             b'-' => {
                 self.read_char();
-                return Token::Minus;
+                Token::Minus
             }
             b'/' => {
                 self.read_char();
-                return Token::Slash;
+                Token::Slash
             }
             b'*' => {
                 self.read_char();
-                return Token::Asterisk;
+                Token::Asterisk
             }
             b'<' => {
                 self.read_char();
-                return Token::Lt;
+                Token::Lt
             }
             b'>' => {
                 self.read_char();
-                return Token::Gt;
+                Token::Gt
             }
             b'!' => {
                 if self.peek_char() == b'=' {
                     self.read_char();
                     self.read_char();
-                    return Token::NotEq;
+                    Token::NotEq
                 } else {
                     self.read_char();
-                    return Token::Bang;
+                    Token::Bang
                 }
             }
             b'{' => {
                 self.read_char();
-                return Token::Lbrace;
+                Token::Lbrace
             }
             b'}' => {
                 self.read_char();
-                return Token::Rbrace;
+                Token::Rbrace
             }
-            b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
-                return self.read_identifier();
-            }
-            b'0'..=b'9' => {
-                return self.read_number();
-            }
+            b'a'..=b'z' | b'A'..=b'Z' | b'_' => self.read_identifier(),
+            b'0'..=b'9' => self.read_number(),
             0 => {
                 self.read_char();
-                return Token::Eof;
+                Token::Eof
             }
             _ => {
                 self.read_char();
-                return Token::Illegal;
+                Token::Illegal
             }
         }
     }
 
     fn peek_char(&self) -> u8 {
         if self.read_position >= self.input.len() {
-            return 0;
+            0
         } else {
-            return self.input.as_bytes()[self.read_position];
+            self.input.as_bytes()[self.read_position]
         }
     }
 
     fn read_identifier(&mut self) -> Token {
         let start = self.position;
-        loop {
-            match self.ch {
-                b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
-                    self.read_char();
-                }
-                _ => {
-                    break;
-                }
-            }
+        while let b'a'..=b'z' | b'A'..=b'Z' | b'_' = self.ch {
+            self.read_char();
         }
 
         let literal = &self.input[start..self.position];
@@ -145,19 +134,12 @@ impl<'a> Lexer<'a> {
 
     fn read_number(&mut self) -> Token {
         let start = self.position;
-        loop {
-            match self.ch {
-                b'0'..=b'9' => {
-                    self.read_char();
-                }
-                _ => {
-                    break;
-                }
-            }
+        while let b'0'..=b'9' = self.ch {
+            self.read_char();
         }
 
         let literal = &self.input[start..self.position];
-        return Token::Int(literal.parse().unwrap());
+        Token::Int(literal.parse().unwrap())
     }
 
     fn read_char(&mut self) {
@@ -171,15 +153,8 @@ impl<'a> Lexer<'a> {
     }
 
     fn skip_whitespace(&mut self) {
-        loop {
-            match self.ch {
-                b' ' | b'\n' | b'\t' | b'\r' => {
-                    self.read_char();
-                }
-                _ => {
-                    break;
-                }
-            }
+        while let b' ' | b'\n' | b'\t' | b'\r' = self.ch {
+            self.read_char();
         }
     }
 }

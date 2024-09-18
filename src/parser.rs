@@ -21,26 +21,25 @@ impl<'a> Parser<'a> {
         parser.next_token();
         parser.next_token();
 
-        return parser;
+        parser
     }
 
     pub fn parse_program(&mut self) -> ast::Program {
         let mut program: ast::Program = vec![];
         while self.curr_token != Token::Eof {
-            match self.parse_statement() {
-                Some(statement) => program.push(statement),
-                None => {}
+            if let Some(statement) = self.parse_statement() {
+                program.push(statement)
             }
             self.next_token();
         }
 
-        return program;
+        program
     }
 
     pub fn parse_statement(&mut self) -> Option<ast::Statement> {
         match self.curr_token {
             Token::Let => self.parse_let_statement(),
-            _ => return None,
+            _ => None,
         }
     }
 
@@ -58,7 +57,7 @@ impl<'a> Parser<'a> {
         };
 
         // next token should be Token::Assign, no need to parse anything
-        if self.expect_peek_token(Token::Assign) == false {
+        if !self.expect_peek_token(Token::Assign) {
             return None;
         }
 
@@ -85,15 +84,12 @@ impl<'a> Parser<'a> {
         match self.curr_token {
             Token::Ident(_) => self.parse_ident_expression(),
             Token::Int(_) => self.parse_int_expression(),
-            _ => return None,
+            _ => None,
         }
     }
 
     fn parse_ident_expression(&mut self) -> Option<ast::Expr> {
-        match self.parse_ident() {
-            Some(ident) => Some(ast::Expr::Ident(ident)),
-            None => None,
-        }
+        self.parse_ident().map(ast::Expr::Ident)
     }
 
     pub fn parse_ident(&mut self) -> Option<ast::Ident> {
@@ -104,10 +100,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_int_expression(&mut self) -> Option<ast::Expr> {
-        match self.parse_int() {
-            Some(int) => Some(ast::Expr::Literal(int)),
-            None => None,
-        }
+        self.parse_int().map(ast::Expr::Literal)
     }
 
     fn parse_int(&mut self) -> Option<ast::Literal> {
@@ -123,15 +116,15 @@ impl<'a> Parser<'a> {
     }
 
     pub fn peek_token_is(&mut self, tok: &Token) -> bool {
-        return self.peek_token == *tok;
+        self.peek_token == *tok
     }
 
     pub fn expect_peek_token(&mut self, tok: Token) -> bool {
         if self.peek_token_is(&tok) {
             self.next_token();
-            return true;
+            true
         } else {
-            return false;
+            false
         }
     }
 }
