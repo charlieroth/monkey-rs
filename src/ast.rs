@@ -15,6 +15,7 @@ pub enum Expr {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Statement {
     Let(Ident, Expr),
+    Return(Expr),
 }
 
 pub type Block = Vec<Statement>;
