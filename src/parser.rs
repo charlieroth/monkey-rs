@@ -116,7 +116,19 @@ impl<'a> Parser<'a> {
         match self.curr_token {
             Token::Let => self.parse_let_statement(),
             Token::Return => self.parse_return_statement(),
-            _ => None,
+            _ => self.parse_expression_statement(),
+        }
+    }
+
+    pub fn parse_expression_statement(&mut self) -> Option<ast::Statement> {
+        match self.parse_expression(Precedence::Lowest) {
+            Some(expr) => {
+                if self.peek_token_is(&Token::Semicolon) {
+                    self.next_token();
+                }
+                Some(ast::Statement::Expr(expr))
+            }
+            None => None,
         }
     }
 
@@ -149,7 +161,7 @@ impl<'a> Parser<'a> {
 
         self.next_token();
 
-        let expr = match self.parse_expression() {
+        let expr = match self.parse_expression(ast::Precedence::Lowest) {
             Some(expr) => expr,
             None => return None,
         };
@@ -161,7 +173,7 @@ impl<'a> Parser<'a> {
         Some(ast::Statement::Let(name, expr))
     }
 
-    pub fn parse_expression(&mut self) -> Option<ast::Expr> {
+    pub fn parse_expression(&mut self, precedence: ast::Precedence) -> Option<ast::Expr> {
         match self.curr_token {
             Token::Ident(_) => self.parse_ident_expression(),
             Token::Int(_) => self.parse_int_expression(),
@@ -288,6 +300,20 @@ return 993322;"#;
                 ast::Statement::Return(ast::Expr::Literal(ast::Literal::Int(10)),),
                 ast::Statement::Return(ast::Expr::Literal(ast::Literal::Int(993322)),),
             ],
+            program
+        );
+    }
+
+    #[test]
+    fn test_identifier_expression() {
+        let input = "foobar;";
+        let mut parser = Parser::new(Lexer::new(input));
+        let program = parser.parse_program();
+        assert_eq!(0, parser.get_errors().len());
+        assert_eq!(
+            vec![ast::Statement::Expr(ast::Expr::Ident(ast::Ident(
+                String::from("foobar")
+            )))],
             program
         );
     }

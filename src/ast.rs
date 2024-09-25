@@ -1,3 +1,13 @@
+pub enum Precedence {
+    Lowest,
+    Equals,      // ==
+    LessGreater, // > or <
+    Sum,         // +
+    Product,     // *
+    Prefix,      // -X or ++X
+    Call,        // some_func(x)
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Ident(pub String);
 
@@ -16,6 +26,7 @@ pub enum Expr {
 pub enum Statement {
     Let(Ident, Expr),
     Return(Expr),
+    Expr(Expr),
 }
 
 pub type Block = Vec<Statement>;
