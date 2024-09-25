@@ -165,9 +165,7 @@ mod tests {
 
     #[test]
     fn basic_symbols() {
-        let input = "
-        =+(){},;
-        ";
+        let input = " =+(){},;";
         let mut lexer = Lexer::new(input);
         let expected_tokens = vec![
             Token::Assign,
@@ -189,10 +187,10 @@ mod tests {
 
     #[test]
     fn variables() {
-        let input = "
-        let five = 5;
-        let ten = 10;
-        ";
+        let input = r#"
+let five = 5;
+let ten = 10;
+"#;
         let mut lexer = Lexer::new(input);
         let expected_tokens = vec![
             Token::Let,
@@ -216,14 +214,14 @@ mod tests {
 
     #[test]
     fn functions() {
-        let input = "
-        let five = 5;
-        let ten = 10;
-        let add = fn(x, y) {
-            x + y;
-        };
-        let result = add(five, ten);
-        ";
+        let input = r#"
+let five = 5;
+let ten = 10;
+let add = fn(x, y) {
+    x + y;
+};
+let result = add(five, ten);
+"#;
         let mut lexer = Lexer::new(input);
         let expected_tokens = vec![
             Token::Let,
@@ -273,10 +271,10 @@ mod tests {
 
     #[test]
     fn more_symbols() {
-        let input = "
-        !-/*5;
-        5 < 10 > 5;
-        ";
+        let input = r#"
+!-/*5;
+5 < 10 > 5;
+"#;
         let mut lexer = Lexer::new(input);
         let expected_tokens = vec![
             Token::Bang,
@@ -302,13 +300,13 @@ mod tests {
 
     #[test]
     fn if_else_statements() {
-        let input = "
-        if (5 < 10) {
-            return true;
-        } else {
-            return false;
-        }
-        ";
+        let input = r#"
+if (5 < 10) {
+    return true;
+} else {
+    return false;
+}
+"#;
         let mut lexer = Lexer::new(input);
         let expected_tokens = vec![
             Token::If,
@@ -339,10 +337,10 @@ mod tests {
 
     #[test]
     fn equal_not_equal() {
-        let input = "
-        10 == 10;
-        10 != 9;
-        ";
+        let input = r#"
+10 == 10;
+10 != 9;
+"#;
         let mut lexer = Lexer::new(input);
         let expected_tokens = vec![
             Token::Int(10),
