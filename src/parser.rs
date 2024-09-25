@@ -115,8 +115,18 @@ impl<'a> Parser<'a> {
     pub fn parse_statement(&mut self) -> Option<ast::Statement> {
         match self.curr_token {
             Token::Let => self.parse_let_statement(),
+            Token::Return => self.parse_return_statement(),
             _ => None,
         }
+    }
+
+    pub fn parse_return_statement(&mut self) -> Option<ast::Statement> {
+        self.next_token();
+        let expr = match self.parse_expression() {
+            Some(expr) => expr,
+            None => return None,
+        };
+        return Some(ast::Statement::Return(expr));
     }
 
     pub fn parse_let_statement(&mut self) -> Option<ast::Statement> {
@@ -260,5 +270,25 @@ let 838383;"#;
         let mut parser = Parser::new(Lexer::new(input));
         let program = parser.parse_program();
         assert_eq!(3, parser.get_errors().len());
+    }
+
+    #[test]
+    fn return_statements() {
+        let input = r#"
+return 5;
+return 10;
+return 993322;"#;
+
+        let mut parser = Parser::new(Lexer::new(input));
+        let program = parser.parse_program();
+        assert_eq!(0, parser.get_errors().len());
+        assert_eq!(
+            vec![
+                ast::Statement::Return(ast::Expr::Literal(ast::Literal::Int(5)),),
+                ast::Statement::Return(ast::Expr::Literal(ast::Literal::Int(10)),),
+                ast::Statement::Return(ast::Expr::Literal(ast::Literal::Int(993322)),),
+            ],
+            program
+        );
     }
 }
