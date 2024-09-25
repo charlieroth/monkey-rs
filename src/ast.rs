@@ -20,11 +20,3 @@ pub enum Statement {
 pub type Block = Vec<Statement>;
 
 pub type Program = Block;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn works() {}
-}
